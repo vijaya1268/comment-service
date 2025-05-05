@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Comment Service</title>
+  <style>
+    body { font-family: Arial; max-width: 600px; margin: 40px auto; }
+    input, textarea { width: 100%; padding: 10px; margin: 5px 0; }
+    button { padding: 8px 12px; }
+    .comment { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+  </style>
+</head>
+<body bgcolor="lightpink">
+  <h1>COMMENT SERVICE</h1><H2>Scalable Services Assignment</h2>
+  <form id="commentForm">
+    <input type="text" id="author" placeholder="Your name" required>
+    <textarea id="content" placeholder="Write a comment..." required></textarea>
+    <button type="submit">Post</button>
+  </form>
+
+  <div id="comments"></div>
+
+  <script>
+    const form = document.getElementById('commentForm');
+    const commentsDiv = document.getElementById('comments');
+
+    function loadComments() {
+      fetch('/comments')
+        .then(res => res.json())
+        .then(comments => {
+          commentsDiv.innerHTML = '';
+          comments.forEach(comment => {
+            const el = document.createElement('div');
+            el.className = 'comment';
+            el.innerHTML = `
+              <strong>${comment.author}</strong>
+              <p>${comment.content}</p>
+              <button onclick="editComment('${comment._id}', '${comment.content}', '${comment.author}')">Edit</button>
+              <button onclick="deleteComment('${comment._id}')">Delete</button>
+            `;
+            commentsDiv.appendChild(el);
+          });
+        });
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const author = document.getElementById('author').value;
+      const content = document.getElementById('content').value;
+      fetch('/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ author, content })
+      }).then(() => {
+        form.reset();
+        loadComments();
+      });
+    });
+
+    function deleteComment(id) {
+      fetch(`/comments/${id}`, { method: 'DELETE' }).then(loadComments);
+    }
+
+    function editComment(id, currentContent, currentAuthor) {
+      const newContent = prompt("Edit your comment:", currentContent);
+      if (newContent) {
+        fetch(`/comments/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: newContent, author: currentAuthor })
+        }).then(loadComments);
+      }
+    }
+
+    loadComments();
+  </script>
+</body>
+</html>
